@@ -29,7 +29,7 @@
     <div class="content">
       <div class="chart-area">
         <div class="chart-wrapper">
-          <div class="title">报告生成趋势</div>
+          <h3 class="title">报告生成趋势</h3>
           <G2Chart
             type="line"
             :data="lineChartData"
@@ -37,7 +37,7 @@
           />
         </div>
         <div class="chart-wrapper">
-          <div class="title">报告类型分布</div>
+          <h3 class="title">报告类型分布</h3>
           <G2Chart type="bar" :data="barChartData" :options="barChartOptions" />
         </div>
       </div>
@@ -118,11 +118,17 @@ const lineChartData = ref([
   { year: "3月", value: 20 },
   { year: "4月", value: 25 },
 ]);
+// 动态计算最大值（向上取整到最近的1000）
+const maxValue = Math.ceil(
+  Math.max(...lineChartData.value.map((d) => d.value / 5)) * 5
+);
+// 生成刻度数组（0到maxValue，间隔1000）
+const yTicks = Array.from({ length: maxValue / 5 + 1 }, (_, i) => i * 5);
 
 // 静态图表配置
 const lineChartOptions = ref({
   type: "view",
-  height: 350,
+  height: 450,
   autoFit: true,
   padding: [40, 20, 50, 50], // 调整边距（上、右、下、左）
   encode: {
@@ -130,14 +136,15 @@ const lineChartOptions = ref({
     y: "value",
   },
   scale: {
-    y: {
-      min: 0,
-      max: 25,
-      tickCount: 5, // 0,5,10,15,20,25
-      nice: true,
-    },
     x: {
-      range: [0.1, 0.9], // 控制x轴显示范围
+      type: "point",
+      domain: lineChartData.value.map((d) => d.year), // 所有年份
+    },
+    y: {
+      type: "linear",
+      domain: [0, maxValue],
+      ticks: yTicks, // 动态生成的刻度
+      tickCount: yTicks.length,
     },
   },
   children: [
@@ -171,57 +178,58 @@ const lineChartOptions = ref({
     },
   ],
   axis: {
-    x: {
-      title: null,
-      formatter: (v) => v, // 确保显示0,10,20,30
+    y: {
+      title: false,
+      line: false,
+      tickLine: false,
+      grid: true,
+      gridLineDash: [0, 0],
+      gridLineWidth: 2.1,
       label: {
+        formatter: (val) => (val % 5 === 0 ? val : ""),
         style: {
-          fontSize: 12,
           fill: "#666",
+          fontSize: 12,
         },
       },
     },
-    y: {
-      title: null,
-      label: {
-        formatter: (v) => `${v}`,
+    x: {
+      title: false,
+      line: {
         style: {
+          stroke: "#ccc", // x轴线颜色
+          lineWidth: 1,
+        },
+      },
+      tickLine: {
+        style: {
+          stroke: "#ccc", // x轴刻度线
+          lineWidth: 1,
+        },
+      },
+      label: {
+        style: {
+          fill: "#666", // 年份标签颜色
           fontSize: 12,
-          fill: "#666",
         },
       },
-      grid: {
-        line: {
-          style: {
-            stroke: "#eee",
-            lineWidth: 1,
-            lineDash: [4, 2], // 虚线网格
-          },
-        },
-      },
+      grid: false,
     },
   },
 });
 
 const barChartData = ref([
-  { category: "专利分析", value: 30 },
-  { category: "技术分析", value: 20 },
-  { category: "市场分析", value: 15 },
+  { item: "专利分析", value: 30 },
+  { item: "技术分析", value: 20 },
+  { item: "市场分析", value: 15 },
 ]);
 
 const barChartOptions = ref({
   type: "view",
-  height: 350,
-  title: {
-    text: "技术领域分布",
-    style: {
-      fontSize: 16,
-      fontWeight: "bold",
-      fill: "#333",
-    },
-  },
+  height: 450,
+  title: false,
   coordinate: { transform: [{ type: "transpose" }] }, // 关键：实现水平方向
-  encode: { x: "category", y: "value" }, // 交换x/y编码
+  encode: { x: "item", y: "value" }, // 交换x/y编码
   scale: {
     y: {
       // 原y轴配置
@@ -233,15 +241,7 @@ const barChartOptions = ref({
   children: [
     {
       type: "interval",
-      encode: { color: "category" },
-      style: {
-        fill: ({ category }) =>
-          ({
-            专利分析: "#6395FA",
-            技术分析: "#63DAAB",
-            市场分析: "#657798",
-          }[category]),
-      },
+      encode: { color: "item" },
       label: {
         text: "value",
         position: "right",
@@ -386,7 +386,8 @@ const data = ref([
 
       .chart-wrapper {
         flex: 1;
-        height: 400px;
+        height: auto;
+        margin-bottom: 10px;
         .title {
           margin-bottom: 10px;
         }

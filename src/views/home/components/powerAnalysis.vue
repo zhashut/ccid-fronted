@@ -35,14 +35,8 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from "vue";
-import { Chart } from "@antv/g2";
+import { ref } from "vue";
 import G2Chart from "../../../components/G2Chart.vue";
-
-// 引用元素
-const patentTrendRef = ref(null);
-const techDistributionRef = ref(null);
-const techCompetitivenessRef = ref(null);
 
 // ---------------------------------------------------------------专利布局趋势图---------------------------------------------------------------
 const patentLayoutData = [
@@ -147,17 +141,17 @@ const patentOptions = ref({
 
 // ---------------------------------------------------------------技术领域分布饼图---------------------------------------------------------------
 const techDistributionData = [
-  { item: "机器学习", count: 1200 },
-  { item: "计算机视觉", count: 800 },
-  { item: "自然语言处理", count: 600 },
-  { item: "语音识别", count: 400 },
-  { item: "其他", count: 200 },
+  { type: "机器学习", value: 1200 },
+  { type: "计算机视觉", value: 800 },
+  { type: "自然语言处理", value: 600 },
+  { type: "语音识别", value: 400 },
+  { type: "其他", value: 200 },
 ];
 
 // 计算总数和百分比
-const total = techDistributionData.reduce((sum, item) => sum + item.count, 0);
+const total = techDistributionData.reduce((sum, item) => sum + item.value, 0);
 techDistributionData.forEach((item) => {
-  item.percent = (item.count / total).toFixed(4); // 保留四位小数
+  item.percent = (item.value / total).toFixed(4); // 保留四位小数
 });
 const techDistributionOptions = ref({
   coordinate: {
@@ -168,8 +162,8 @@ const techDistributionOptions = ref({
   data: techDistributionData,
   transform: [{ type: "stackY" }],
   encode: {
-    y: "count",
-    color: "item",
+    y: "value",
+    color: "type",
   },
   legend: {
     color: {
@@ -180,13 +174,13 @@ const techDistributionOptions = ref({
   labels: [
     {
       position: "outside",
-      text: (data) => `${data.item}: ${(data.percent * 100).toFixed(2)}%`,
+      text: (data) => `${data.type}: ${(data.percent * 100).toFixed(2)}%`,
     },
   ],
   tooltip: {
     items: [
       (data) => ({
-        name: data.item,
+        name: data.type,
         value: `${(data.percent * 100).toFixed(2)}%`,
       }),
     ],

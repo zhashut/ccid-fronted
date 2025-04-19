@@ -27,13 +27,15 @@
     <div class="content">
       <div class="chart-area">
         <div class="chart-wrapper">
+          <h4 class="title">专利申请趋势</h4>
           <G2Chart
             type="line"
-            :data="lineChartData"
+            :data="patentLayoutData"
             :options="lineChartOptions"
           />
         </div>
         <div class="chart-wrapper">
+          <h4 class="title">技术领域分布</h4>
           <G2Chart type="bar" :data="barChartData" :options="barChartOptions" />
         </div>
       </div>
@@ -108,10 +110,10 @@ const onSearch = async () => {
 };
 
 // 选择器功能
-const selectValue = ref("全部");
+const selectValue = ref("全部领域");
 const handleChange = async () => {
   await fetchGetDataPatentList({
-    field: selectValue.value === "全部" ? "" : selectValue.value,
+    field: selectValue.value === "全部领域" ? "" : selectValue.value,
   });
 };
 
@@ -137,7 +139,7 @@ const handleTableChange = async (pag) => {
 const data = ref([]);
 const isOptionsInitialized = ref(false);
 const allFieldOptions = ref<Array<{ value: string; label: string }>>([]);
-const fieldOptions = ref([{ value: "全部", label: "全部" }]);
+const fieldOptions = ref([{ value: "全部领域", label: "全部领域" }]);
 
 async function fetchGetDataPatentList(params?: any) {
   const res: any = await api.dataAnalysis.getDataPatentList(params);
@@ -149,7 +151,7 @@ async function fetchGetDataPatentList(params?: any) {
         .map((item) => item.field)
         .filter((field, index, self) => self.indexOf(field) === index);
       allFieldOptions.value = [
-        { value: "全部", label: "全部" },
+        { value: "全部领域", label: "全部领域" },
         ...fields.map((field) => ({
           value: field,
           label: field,
@@ -162,141 +164,131 @@ async function fetchGetDataPatentList(params?: any) {
 }
 
 // 图表数据配置
-const lineChartData = ref([
-  { year: "1月", value: 10 },
-  { year: "2月", value: 15 },
-  { year: "3月", value: 20 },
-  { year: "4月", value: 25 },
-]);
+const patentLayoutData = [
+  { year: "2019", value: 1000 },
+  { year: "2020", value: 1500 },
+  { year: "2021", value: 2000 },
+  { year: "2022", value: 2500 },
+  { year: "2023", value: 3000 },
+];
+// 动态计算最大值（向上取整到最近的1000）
+const maxValue =
+  Math.ceil(Math.max(...patentLayoutData.map((d) => d.value)) / 1000) * 1000;
+// 生成刻度数组（0到maxValue，间隔1000）
+const yTicks = Array.from({ length: maxValue / 1000 + 1 }, (_, i) => i * 1000);
 
 // 静态图表配置
 const lineChartOptions = ref({
   type: "view",
-  height: 350,
-  autoFit: true,
-  padding: [40, 20, 50, 50], // 调整边距（上、右、下、左）
-  encode: {
-    x: "year",
-    y: "value",
-  },
-  scale: {
-    y: {
-      min: 0,
-      max: 25,
-      tickCount: 5, // 0,5,10,15,20,25
-      nice: true,
-    },
-    x: {
-      range: [0.1, 0.9], // 控制x轴显示范围
-    },
-  },
+  height: 450,
+  data: patentLayoutData,
   children: [
     {
       type: "line",
+      encode: { x: "year", y: "value" },
       style: {
-        stroke: "#1890ff",
-        lineWidth: 3, // 加粗线条
-        lineJoin: "round", // 圆角连接
-      },
-      label: {
-        text: "value",
-        position: "top",
-        style: {
-          fill: "#1890ff",
-          fontSize: 12,
-          fontWeight: "bold",
-          dy: -10, // 标签上移
-        },
-      },
-    },
-    {
-      type: "point",
-      shape: "circle",
-      size: 4,
-      style: {
-        fill: "#fff",
-        stroke: "#1890ff",
+        stroke: "#1890FF", // 蓝色折线
         lineWidth: 2,
       },
     },
-  ],
-  axis: {
-    x: {
-      title: false,
-      label: {
-        style: {
-          fontSize: 12,
-          fill: "#666",
-        },
+    {
+      type: "point", // 数据点
+      encode: { x: "year", y: "value" },
+      style: {
+        stroke: "#1890FF",
+        fill: "#1890FF",
+        lineWidth: 2,
+        size: 6, // 点的大小
       },
-      grid: null, // 隐藏x轴网格线
+    },
+  ],
+  scale: {
+    x: {
+      type: "point",
+      domain: patentLayoutData.map((d) => d.year), // 所有年份
     },
     y: {
+      type: "linear",
+      domain: [0, maxValue],
+      ticks: yTicks, // 动态生成的刻度
+      tickCount: yTicks.length,
+    },
+  },
+  axis: {
+    y: {
       title: false,
-      tickCount: 6, // 强制6个刻度
+      line: false,
+      tickLine: false,
+      grid: true,
+      gridLineDash: [0, 0],
+      gridLineWidth: 2.1,
       label: {
-        formatter: (v) => `${v}`,
+        formatter: (val) => (val % 1000 === 0 ? val : ""),
         style: {
-          fontSize: 12,
           fill: "#666",
-        },
-      },
-      grid: {
-        line: {
-          style: {
-            stroke: "#eee",
-            lineWidth: 1,
-            lineDash: [4, 2], // 虚线网格
-          },
+          fontSize: 12,
         },
       },
     },
+    x: {
+      title: false,
+      line: {
+        style: {
+          stroke: "#ccc", // x轴线颜色
+          lineWidth: 1,
+        },
+      },
+      tickLine: {
+        style: {
+          stroke: "#ccc", // x轴刻度线
+          lineWidth: 1,
+        },
+      },
+      label: {
+        style: {
+          fill: "#666", // 年份标签颜色
+          fontSize: 12,
+        },
+      },
+      grid: false,
+    },
   },
+  title: false,
+  // 禁用所有交互效果
+  interactions: [],
+  tooltip: false,
 });
 
 const barChartData = ref([
-  { category: "机器学习", value: 1050 },
-  { category: "计算机视觉", value: 850 },
-  { category: "自然语言处理", value: 650 },
-  { category: "语音识别", value: 450 },
-  { category: "其他", value: 300 },
+  { type: "机器学习", value: 1200 },
+  { type: "计算机视觉", value: 850 },
+  { type: "自然语言处理", value: 650 },
+  { type: "语音识别", value: 450 },
+  { type: "其他", value: 300 },
 ]);
+const barMaxValue =
+  Math.ceil(Math.max(...barChartData.value.map((d) => d.value)) / 1000) * 1000;
 
 const barChartOptions = ref({
   type: "view",
-  height: 350,
-  title: {
-    text: "技术领域分布",
-    style: {
-      fontSize: 16,
-      fontWeight: "bold",
-      fill: "#333",
-    },
-  },
+  height: 450,
+  title: false,
   coordinate: { transform: [{ type: "transpose" }] }, // 关键：实现水平方向
-  encode: { x: "category", y: "value" }, // 交换x/y编码
+  encode: { x: "type", y: "value" }, // 交换x/y编码
   scale: {
     x: {
       // 原y轴配置
       domainMin: 0,
-      domainMax: 1200,
+      domainMax: barMaxValue,
       tickCount: 5,
     },
   },
   children: [
     {
       type: "interval",
-      encode: { color: "category" },
+      encode: { color: "type" },
       style: {
-        fill: ({ category }) =>
-          ({
-            机器学习: "#6395FA",
-            计算机视觉: "#63DAAB",
-            自然语言处理: "#657798",
-            语音识别: "#F7C122",
-            其他: "#7666FA",
-          }[category]),
-        marginBottom: 30, // 间隔像素值
+        intervalWidth: 0.6,
       },
       label: {
         text: "value",
@@ -364,7 +356,7 @@ const barChartOptions = ref({
 
       .chart-wrapper {
         flex: 1;
-        height: 400px;
+        height: auto;
         margin-bottom: 20px;
 
         /* 图表容器样式 */
