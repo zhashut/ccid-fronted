@@ -5,25 +5,31 @@
       <a-select
         ref="select"
         v-model:value="selectValue"
-        style="flex: 1"
-        @focus="focus"
+        style="width: 200px"
+        placeholder="请选择"
         @change="handleChange"
       >
-        <a-select-option value="jack">Jack</a-select-option>
-        <a-select-option value="lucy">Lucy</a-select-option>
-        <a-select-option value="disabled" disabled>Disabled</a-select-option>
-        <a-select-option value="Yiminghe">yiminghe</a-select-option>
+        <a-select-option
+          v-for="(item, index) in selectList"
+          :key="index"
+          :value="item"
+          >{{ item }}</a-select-option
+        >
       </a-select>
 
       <a-range-picker
         v-model:value="timeValue"
         show-time
-        style="flex: 1"
         format="YYYY-MM-DD HH:mm"
+        value-format="YYYY-MM-DD HH:mm:ss"
         :placeholder="['开始日期', '结束日期']"
+        @change="handleTimeChang"
       />
 
-      <a-button type="primary" style="flex: 1">生成新报告</a-button>
+      <div class="button" @click="onRest()">
+        <img src="@/assets/image/刷新.png" alt="" />
+        <span>刷新</span>
+      </div>
     </div>
 
     <div class="content">
@@ -66,30 +72,31 @@
               <a-tag v-else-if="record.type === '技术分析'" color="green">{{
                 record.type
               }}</a-tag>
+              <a-tag v-else-if="record.type === '市场分析'" color="blue">{{
+                record.type
+              }}</a-tag>
             </template>
 
             <template v-if="column.key === 'status'">
-              <a-tag v-if="record.status === '已完成'" color="green">{{
-                record.status
-              }}</a-tag>
-              <a-tag v-else-if="record.status === '进行中'" color="blue">{{
-                record.status
-              }}</a-tag>
-              <a-tag v-else-if="record.status === '未完成'" color="pink">{{
-                record.status
-              }}</a-tag>
+              <a-tag v-if="record.status === 1" color="green">已完成</a-tag>
+              <a-tag v-else-if="record.status === 2" color="blue">进行中</a-tag>
             </template>
 
             <template v-if="column.key === 'operation'">
               <div style="display: flex; gap: 10px">
-                <div class="operation" style="color: #1677ff">
+                <div
+                  class="operation"
+                  style="color: #1677ff"
+                  @click="setDataTwo(record)"
+                >
                   <img src="" alt="" /> <span>查看</span>
                 </div>
-                <div class="operation" style="color: #1677ff">
+                <div
+                  class="operation"
+                  style="color: #1677ff"
+                  @click="handleColumns(record)"
+                >
                   <img src="" alt="" /> <span>编辑</span>
-                </div>
-                <div class="operation" style="color: #1677ff">
-                  <img src="" alt="" /> <span>下载</span>
                 </div>
               </div>
             </template>
@@ -98,19 +105,80 @@
       </div>
     </div>
   </div>
+  <a-modal
+    v-model:open="modalVisible"
+    :title="modalValue"
+    style="top: 30px"
+    @ok="setModal1Visible(false)"
+  >
+    <a-form
+      :model="formState"
+      name="basic"
+      :label-col="{ span: 8 }"
+      :wrapper-col="{ span: 16 }"
+      autocomplete="off"
+      style="margin-top: 40px; margin-left: -40px"
+    >
+      <a-form-item label="报告ID" name="id">
+        <a-input v-model:value="formState.id" />
+      </a-form-item>
+      <a-form-item label="报告名称" name="name">
+        <a-input v-model:value="formState.name" />
+      </a-form-item>
+      <a-form-item label="报告类型" name="type">
+        <a-input v-model:value="formState.type" />
+      </a-form-item>
+      <a-form-item label="报告状态" name="status">
+        <a-select v-model:value="formState.status" placeholder="请选择状态">
+          <a-select-option :value="1">进行中</a-select-option>
+          <a-select-option :value="2">已完成</a-select-option>
+        </a-select>
+      </a-form-item>
+      <a-form-item label="报告内容" name="content">
+        <a-input v-model:value="formState.content" />
+      </a-form-item>
+    </a-form>
+
+    <template #footer v-if="modalValue === '报告修改'">
+      <a-button @click="handleCancel">取消</a-button>
+      <a-button type="primary" @click="handleSubmit">确定</a-button>
+    </template>
+    <template #footer v-else> </template>
+  </a-modal>
 </template>
 
 <script setup>
-import { ref } from "vue";
+import { computed, onMounted, ref, reactive } from "vue";
 import G2Chart from "@/components/G2Chart.vue";
+import api from "@/api";
 
+onMounted(() => {
+  getData();
+});
 // 选择器功能 (保持原样)
-const selectValue = ref("jack");
-const handleChange = () => {
-  // 选择器变更逻辑
+const selectValue = ref();
+const selectList = ref(["技术分析", "市场分析", "专利分析"]);
+const handleChange = (value) => {
+  selectValue.value = value;
+  getData();
 };
 const timeValue = ref();
-
+const start_time = ref();
+const end_time = ref();
+const handleTimeChang = (value) => {
+  timeValue.value = value;
+  start_time.value = value[0];
+  end_time.value = value[1];
+  getData();
+};
+// 刷新
+const onRest = () => {
+  selectValue.value = "";
+  timeValue.value = "";
+  start_time.value = "";
+  end_time.value = "";
+  getData();
+};
 // 图表数据配置
 const lineChartData = ref([
   { year: "1月", value: 10 },
@@ -128,7 +196,7 @@ const yTicks = Array.from({ length: maxValue / 5 + 1 }, (_, i) => i * 5);
 // 静态图表配置
 const lineChartOptions = ref({
   type: "view",
-  height: 450,
+  height: 400,
   autoFit: true,
   padding: [40, 20, 50, 50], // 调整边距（上、右、下、左）
   encode: {
@@ -226,7 +294,7 @@ const barChartData = ref([
 
 const barChartOptions = ref({
   type: "view",
-  height: 450,
+  height: 400,
   title: false,
   coordinate: { transform: [{ type: "transpose" }] }, // 关键：实现水平方向
   encode: { x: "item", y: "value" }, // 交换x/y编码
@@ -299,6 +367,7 @@ const pagination = ref({
     // 页码改变回调
     pagination.value.current = page;
     pagination.value.pageSize = pageSize;
+    getData();
   },
 });
 const columns = [
@@ -333,27 +402,112 @@ const columns = [
     key: "operation",
   },
 ];
-// 模拟数据生成
-const data = ref([
+const data = ref([]);
+const getData = async () => {
+  try {
+    const params = {
+      type: selectValue.value,
+      start_time: start_time.value || "",
+      end_time: end_time.value || "",
+      page: pagination.value.current,
+      pageSize: pagination.value.pageSize,
+    };
+    const res = await api.propertyAnalysis.getDataReportList(params);
+    console.log(res);
+    data.value = res.data.list;
+    timeValue.value = "";
+  } catch (e) {
+    console.log(e);
+  }
+};
+// 弹窗
+const modalVisible = ref(false);
+const modalValue = ref();
+const setModal1Visible = (open) => {
+  modal1Visible.value = open;
+};
+const formState = reactive({
+  id: 1,
+  name: "",
+  type: "",
+  content: "",
+  status: 1,
+});
+const handleColumns = (row) => {
+  console.log("zhashut 编辑 row", row);
+  modalVisible.value = true;
+  modalValue.value = "报告修改";
+  Object.keys(formState).forEach((key) => {
+    if (row.hasOwnProperty(key)) {
+      formState[key] = row[key];
+    }
+  });
+};
+const handleSubmit = async () => {
+  try {
+    const params = { ...formState };
+    await api.propertyAnalysis.updateDataReport(params);
+  } catch (e) {}
+};
+
+const handleCancel = () => {
+  // 重置表单
+  Object.assign(formState, {
+    name: "",
+    type: "",
+    content: "",
+    status: 1,
+  });
+  // 关闭弹窗
+  modalVisible.value = false;
+};
+
+// 弹窗二
+const modalTowVisible = ref(false);
+const columnsTwo = [
   {
-    id: "REP2024001",
-    name: "人工智能领域专利分析报告",
-    time: "2024-04-16",
-    type: "专利分析",
-    status: "已完成",
-    content:
-      "这是一份关于人工智能领域专利分析的报告，包含了专利趋势分析、主要申请人分析、技术领域分布等内容。",
+    title: "报告",
+    dataIndex: "id",
+    key: "id",
   },
   {
-    id: "REP2024002",
-    name: "计算机视觉技术发展报告",
-    time: "2024-04-15",
-    type: "技术分析",
-    status: "进行中",
-    content:
-      "这是一份关于计算机视觉技术发展的报告，包含了技术演进路线、关键算法分析、应用场景等内容。",
+    title: "报告名称",
+    dataIndex: "name",
+    key: "name",
   },
-]);
+  {
+    title: "生成时间",
+    dataIndex: "time",
+    key: "time",
+  },
+  {
+    title: "报告内容",
+    dataIndex: "content",
+    key: "content",
+  },
+  {
+    title: "报告类型",
+    dataIndex: "type",
+    key: "type",
+  },
+  {
+    title: "状态",
+    dataIndex: "status",
+    key: "status",
+  },
+  {
+    title: "操作",
+    dataIndex: "operation",
+    key: "operation",
+  },
+];
+const dataTwo = ref();
+const setDataTwo = (row) => {
+  console.log("zhashut 查看 row", row);
+  modalValue.value = "查看";
+  dataTwo.value = [...[row]]; // 强制转为数组
+  modalVisible.value = true;
+};
 </script>
 
 <style lang="scss" scoped>
@@ -365,7 +519,19 @@ const data = ref([
     display: flex;
     gap: 20px;
   }
-
+  .button {
+    display: flex;
+    align-items: center;
+    margin-left: 10px;
+    padding: 2px 15px;
+    font-size: 12px;
+    border: 1px solid #d9d9d9;
+    gap: 10px;
+    cursor: pointer;
+    img {
+      width: 17px;
+    }
+  }
   .content {
     .operation {
       display: flex;
