@@ -1,0 +1,6 @@
+.paddingBox{
+    width: 100%;
+    background-color: white;
+    padding: 16px;
+    box-sizing: border-box;
+}

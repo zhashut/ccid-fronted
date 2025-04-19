@@ -1,0 +1,18 @@
+<template>
+  <div class="home">
+    <a-menu
+      v-model:selectedKeys="current"
+      mode="horizontal"
+      :items="navTable"
+    />
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref } from "vue";
+import { MenuProps } from "ant-design-vue";
+
+
+</script>
+
+<style></style>

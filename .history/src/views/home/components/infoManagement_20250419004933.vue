@@ -1,0 +1,195 @@
+<template>
+  <div class="infoManagement">
+    <div class="search">
+      <a-input-search
+        v-model:value="searchValue"
+        placeholder="搜索数据"
+        style="width: 200px"
+        @search="onSearch"
+      />
+      <div class="button" @click="onRest()">
+        <img src="../../../assets/image/刷新.png" alt="" />
+        <span>刷新</span>
+      </div>
+    </div>
+    <div class="progress">
+      <div>数据采集进度</div>
+      <a-progress :percent="progressValue" />
+    </div>
+    <div class="table">
+      <a-table :columns="columns" :data-source="data" :pagination="pagination">
+        <template #bodyCell="{ column, record }">
+          <!-- 自定义名称列 -->
+          <template v-if="column.key != 'type' && column.key != 'status'">
+            {{ record[column.dataIndex] }}
+          </template>
+
+          <template v-if="column.key === 'type'">
+            <a-tag v-if="record.type === '专利'" color="blue">{{
+              record.type
+            }}</a-tag>
+            <a-tag v-else-if="record.type === '软件著作权'" color="orange">{{
+              record.type
+            }}</a-tag>
+            <a-tag v-else-if="record.type === '专利'" color="green">{{
+              record.type
+            }}</a-tag>
+          </template>
+
+          <template v-if="column.key === 'state'">
+            <a-tag v-if="record.state === '已完成'" color="blue">{{
+              record.state
+            }}</a-tag>
+            <a-tag v-if="record.state === '未完成'" color="red">{{
+              record.state
+            }}</a-tag>
+          </template>
+        </template>
+      </a-table>
+    </div>
+  </div>
+</template>
+
+<script setup>
+import { ref } from "vue";
+
+// 搜索
+const searchValue = ref();
+const onSearch = () => {};
+const onRest = () => {
+  searchValue.value = "";
+};
+
+//  进度条
+const progressValue = ref(75);
+
+// table
+const 
+const columns = [
+  {
+    title: "数据ID",
+    dataIndex: "id",
+    key: "id",
+  },
+  {
+    title: "数据类型",
+    dataIndex: "type",
+    key: "type",
+  },
+  {
+    title: "标题",
+    dataIndex: "title",
+    key: "title",
+  },
+  {
+    title: "来源",
+    dataIndex: "source",
+    key: "source",
+  },
+  {
+    title: "采集时间",
+    dataIndex: "time",
+    key: "time",
+  },
+  {
+    title: "来源",
+    dataIndex: "status",
+    key: "status",
+  },
+];
+// 模拟数据生成
+const data = ref([
+  {
+    id: "IP-20230001",
+    type: "专利",
+    title: "一种新型环保材料制备方法",
+    source: "国家知识产权局",
+    time: "2023-05-12 09:23:45",
+    status: "已完成",
+  },
+  {
+    id: "IP-20230002",
+    type: "软件著作权",
+    title: "企业数据管理系统V1.0",
+    source: "企业自主申报",
+    time: "2023-06-18 14:12:33",
+    status: "已完成",
+  },
+  {
+    id: "IP-20230003",
+    type: "商标",
+    title: "绿源生态商标注册",
+    source: "第三方平台",
+    time: "2023-07-22 11:45:21",
+    status: "进行中",
+  },
+  {
+    id: "IP-20230004",
+    type: "专利",
+    title: "智能家居控制系统",
+    source: "合作机构",
+    time: "2023-08-05 16:30:18",
+    status: "未完成",
+  },
+  {
+    id: "IP-20230005",
+    type: "版权",
+    title: "数字艺术作品《城市之光》",
+    source: "第三方平台",
+    time: "2023-09-11 10:15:42",
+    status: "已完成",
+  },
+  {
+    id: "IP-20230006",
+    type: "专利",
+    title: "新能源汽车电池管理系统",
+    source: "国家知识产权局",
+    time: "2023-10-28 13:22:37",
+    status: "进行中",
+  },
+  {
+    id: "IP-20230007",
+    type: "软件著作权",
+    title: "移动支付应用系统V2.0",
+    source: "企业自主申报",
+    time: "2023-11-15 08:45:29",
+    status: "未完成",
+  },
+  {
+    id: "IP-20230008",
+    type: "商标",
+    title: "悦享生活商标注册",
+    source: "合作机构",
+    time: "2023-12-03 15:33:56",
+    status: "已完成",
+  },
+]);
+</script>
+
+<style lang="scss" scoped>
+.infoManagement {
+  width: 100%;
+  padding: 16px;
+  box-sizing: border-box;
+  background-color: white;
+  & > div {
+    margin-bottom: 20px;
+  }
+  .search {
+    display: flex;
+    .button {
+      display: flex;
+      align-items: center;
+      margin-left: 10px;
+      padding: 2px 15px;
+      font-size: 12px;
+      border: 1px solid #d9d9d9;
+      gap: 10px;
+      cursor: pointer;
+      img {
+        width: 17px;
+      }
+    }
+  }
+}
+</style>
