@@ -63,7 +63,8 @@
 <script setup lang="ts">
 import { ref, onMounted, watch } from "vue";
 import G2Chart from "@/components/G2Chart.vue";
-import { getDataPatentList } from "@/api";
+// import { getDataPatentList } from "@/api";
+import api from "@/api";
 
 onMounted(async () => {
   await fetchGetDataPatentList();
@@ -141,7 +142,7 @@ const allFieldOptions = ref<Array<{ value: string; label: string }>>([]);
 const fieldOptions = ref([{ value: "全部", label: "全部" }]);
 
 async function fetchGetDataPatentList(params?: any) {
-  const res: any = await getDataPatentList(params);
+  const res: any = await api.dataAnalysis.getDataPatentList(params);
   if (res.code === 0) {
     data.value = res.data.list;
     pagination.value.total = res.data.total;

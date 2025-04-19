@@ -60,7 +60,6 @@ const navItems = ref([
 
 // 标签切换回调
 const handleTabChange = (key: string) => {
-  console.log("当前标签:", key);
   // 可以在这里添加标签切换时的逻辑
 };
 </script>

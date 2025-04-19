@@ -17,7 +17,11 @@
       <a-progress :percent="progressValue" />
     </div>
     <div class="table">
-      <a-table :columns="columns" :data-source="data" :pagination="pagination">
+      <a-table
+        :columns="columns"
+        :data-source="data"
+        :pagination="pagination"
+      >
         <template #bodyCell="{ column, record }">
           <!-- 自定义名称列 -->
           <template v-if="column.key != 'type' && column.key != 'status'">
@@ -49,11 +53,9 @@ onMounted(() => {
 // 搜索
 const searchValue = ref();
 const onSearch = () => {
-  console.log("点击了搜索");
   getData();
 };
 const onRest = () => {
-  console.log("点击了刷新");
   searchValue.value = "";
   getData();
 };
@@ -66,12 +68,15 @@ const progressValue = ref(75);
 const pagination = ref({
   current: 1, // 当前页码
   pageSize: 10, // 每页显示条数
+  total: 0,
   onChange: (page, pageSize) => {
     // 页码改变回调
     pagination.value.current = page;
     pagination.value.pageSize = pageSize;
+    getData();
   },
 });
+
 const columns = [
   {
     title: "数据ID",
@@ -109,14 +114,12 @@ const getData = async () => {
   try {
     const params = {
       keyword: searchValue.value,
-      page: 1,
-      pageSize: 10,
+      page: pagination.value.current,
     };
     const res = await api.infoManagement.getDataPropertyList(params);
-    console.log(res);
     data.value = res.data.list;
+    pagination.value.total = res.data.total;
   } catch (e) {
-    console.log("getData 错误", e);
   }
 };
 const data = ref([]);

@@ -31,13 +31,8 @@
           </template>
 
           <template v-if="column.key === 'status'">
-            <a-tag v-if="record.status === '已完成'" color="blue">{{
-              record.status
-            }}</a-tag>
-            <a-tag v-else-if="record.status === '未完成'" color="pink">{{
-              record.status
-            }}</a-tag>
-            <a-tag v-else color="blue">{{ record.status }}</a-tag>
+            <a-tag v-if="record.status === 1" color="blue">进行中</a-tag>
+            <a-tag v-else-if="record.status === 2" color="green">已完成</a-tag>
           </template>
 
           <template v-if="column.key === 'operation'">
@@ -50,7 +45,15 @@
                 <img src="" alt="" /> <span>编辑</span>
               </div>
               <div class="controls" style="color: red">
-                <img src="" alt="" /> <span>删除</span>
+                <img src="" alt="" />
+                <a-popconfirm
+                  title="确认删除此任务吗？"
+                  ok-text="确定"
+                  cancel-text="取消"
+                  @confirm="(e) => handleConfirm(record.id, e)"
+                >
+                  <a-button type="link" danger>删除</a-button>
+                </a-popconfirm>
               </div>
             </div>
           </template>
@@ -66,8 +69,8 @@
       </div>
       <a-table
         :columns="columnsTwo"
-        :data-source="data"
-        :pagination="pagination"
+        :data-source="dataTwo"
+        :pagination="paginationTwo"
       >
         <template #bodyCell="{ column, record }">
           <!-- 自定义名称列 -->
@@ -76,10 +79,9 @@
           </template>
 
           <template v-if="column.key === 'role'">
-            <a-tag v-if="record.type === '管理员'" color="red">{{
-              record.type
-            }}</a-tag>
-            <a-tag v-else color="blue">{{ record.type }}</a-tag>
+            <a-tag v-if="record.role === 3" color="red">管理员</a-tag>
+            <a-tag v-else-if="record.role === 2" color="blue">编辑</a-tag>
+            <a-tag v-else-if="record.role === 1" color="blue">查看</a-tag>
           </template>
 
           <template v-if="column.key === 'operation'">
@@ -92,7 +94,15 @@
                 <img src="" alt="" /> <span>编辑</span>
               </div>
               <div class="controls" style="color: red">
-                <img src="" alt="" /> <span>删除</span>
+                <img src="" alt="" />
+                <a-popconfirm
+                  title="确认删除此任务吗？"
+                  ok-text="确定"
+                  cancel-text="取消"
+                  @confirm="(e) => handleConfirmTwo(record.id, e)"
+                >
+                  <a-button type="link" danger>删除</a-button>
+                </a-popconfirm>
               </div>
             </div>
           </template>
@@ -116,17 +126,23 @@
       style="margin-top: 40px; margin-left: -40px"
       v-if="modalValue === '新建任务' || modalValue === '更新任务'"
     >
-      <a-form-item label="专利ID" name="id">
-        <a-input v-model:value="formState.id" />
+      <a-form-item label="任务名称" name="name">
+        <a-input v-model:value="formState.name" />
       </a-form-item>
-      <a-form-item label="专利名称" name="title">
-        <a-input v-model:value="formState.title" />
+      <a-form-item label="数据类型" name="type">
+        <a-select v-model:value="formState.type" placeholder="请选择状态">
+          <a-select-option value="专利">专利</a-select-option>
+          <a-select-option value="论文">论文</a-select-option>
+        </a-select>
       </a-form-item>
-      <a-form-item label="申请人" name="applicant">
-        <a-input v-model:value="formState.applicant" />
+      <a-form-item label="负责人" name="manager">
+        <a-input v-model:value="formState.manager" />
       </a-form-item>
-      <a-form-item label="技术领域" name="field">
-        <a-input v-model:value="formState.field" />
+      <a-form-item label="状态" name="status">
+        <a-select v-model:value="formState.status" placeholder="请选择状态">
+          <a-select-option :value="1">进行中</a-select-option>
+          <a-select-option :value="2">已完成</a-select-option>
+        </a-select>
       </a-form-item>
     </a-form>
 
@@ -140,13 +156,14 @@
       v-else
     >
       <a-form-item label="姓名" name="name">
-        <a-input v-model:value="formState.name" />
+        <a-input v-model:value="formStateTwo.name" />
       </a-form-item>
       <a-form-item label="角色" name="role">
-        <a-input
-          v-model:value="formState.role"
-          aria-placeholder="1:查看, 2:编辑, 3:管理"
-        />
+        <a-select v-model:value="formStateTwo.role" placeholder="请选择角色">
+          <a-select-option :value="1">查看</a-select-option>
+          <a-select-option :value="2">编辑</a-select-option>
+          <a-select-option :value="3">管理员</a-select-option>
+        </a-select>
       </a-form-item>
     </a-form>
 
@@ -163,18 +180,34 @@ import api from "@/api/index";
 
 onMounted(() => {
   getData();
+  getDataTwo();
 });
 // table
 // 分页配置
 const pagination = ref({
   current: 1, // 当前页码
   pageSize: 10, // 每页显示条数
+  total: 0,
   onChange: (page, pageSize) => {
     // 页码改变回调
     pagination.value.current = page;
     pagination.value.pageSize = pageSize;
+    getData();
   },
 });
+
+const paginationTwo = ref({
+  current: 1, // 当前页码
+  pageSize: 10, // 每页显示条数
+  total: 0,
+  onChange: (page, pageSize) => {
+    // 页码改变回调
+    paginationTwo.value.current = page;
+    paginationTwo.value.pageSize = pageSize;
+    getDataTwo();
+  },
+});
+
 const columns = [
   {
     title: "任务ID",
@@ -193,8 +226,8 @@ const columns = [
   },
   {
     title: "负责人",
-    dataIndex: "personCharge",
-    key: "personCharge",
+    dataIndex: "manager",
+    key: "manager",
   },
   {
     title: "状态",
@@ -208,15 +241,17 @@ const columns = [
   },
 ];
 // 模拟数据生成
-const data = ref([]);
-const getData = () => {
+const data = ref();
+const getData = async () => {
   try {
-    const res = api.processing.getDataPatentList();
-    console.log("res", res);
-    data.value = res.data.list;
-  } catch (e) {
-    console.log("res", e);
-  }
+    const params = {
+      page: pagination.value.current,
+      pageSize: pagination.value.pageSize,
+    };
+    const res = await api.processing.getDataPatentList(params);
+    data.value = res?.data.list;
+    pagination.value.total = res?.data.total;
+  } catch (e) {}
 };
 const columnsTwo = [
   {
@@ -240,19 +275,28 @@ const columnsTwo = [
     key: "operation",
   },
 ];
-
+const dataTwo = ref();
+const getDataTwo = async () => {
+  try {
+    const params = {
+      page: paginationTwo.value.current,
+      pageSize: paginationTwo.value.pageSize,
+    };
+    const res = await api.processing.getTeamMemberList(params);
+    dataTwo.value = res?.data.list;
+    paginationTwo.value.total = res?.data.total;
+  } catch (e) {}
+};
 // table 编辑
 const updataPatentTable = (row) => {
   modalValue.value = "更新任务";
   modalVisible.value = true;
   Object.assign(formState, row); // 正确更新响应式对象
-  console.log("updatePatentTable", row);
 };
 const updataTeamMemberTable = (row) => {
   modalValue.value = "更新团队成员";
   modalVisible.value = true;
   Object.assign(formStateTwo, row); // 正确更新响应式对象
-  console.log("updateTeamMemberTable", row);
 };
 // 弹窗
 const modalVisible = ref(false);
@@ -261,10 +305,10 @@ const setModal1Visible = (open) => {
   modal1Visible.value = open;
 };
 const formState = reactive({
-  id: "",
-  title: "",
-  applicant: "",
-  field: "",
+  name: "",
+  type: "",
+  manager: "",
+  status: 1,
 });
 const formStateTwo = reactive({
   name: "",
@@ -282,33 +326,31 @@ const handleSubmit = async () => {
   try {
     if (modalValue.value === "新建任务") {
       const params = { ...formState };
-      const res = await api.processing.createDataPatent();
-      console.log("handleSubmit 成功", params);
+      await api.processing.createDataPatent(params);
+      getData();
     } else if (modalValue.value === "添加成员") {
       const params = { ...formStateTwo };
-      const res = await api.processing.createTeamMember();
-      console.log("handleSubmit 成功", params);
+      await api.processing.createTeamMember(params);
+      getDataTwo();
     } else if (modalValue.value === "更新任务") {
       const params = { ...formState };
-      const res = await api.processing.updateDataPatent();
-      console.log("handleSubmit 更新任务", params);
+      await api.processing.updateDataPatent(params);
+      getData();
     } else {
       const params = { ...formStateTwo };
-      const res = await api.processing.updateTeamMember();
-      console.log("handleSubmit 更新团队成员", params);
+      await api.processing.updateTeamMember(params);
+      getDataTwo();
     }
     handleCancel();
-  } catch (e) {
-    console.log("handleSubmit 错误", e);
-  }
+  } catch (e) {}
 };
 const handleCancel = () => {
   // 重置表单
   Object.assign(formState, {
-    id: "",
-    title: "",
-    applicant: "",
-    field: "",
+    name: "",
+    type: "",
+    manager: "",
+    status: 1,
   });
 
   Object.assign(formStateTwo, {
@@ -319,6 +361,19 @@ const handleCancel = () => {
   // 关闭弹窗
   modalVisible.value = false;
   activeModalType.value = "";
+};
+// 删除
+const handleConfirm = async (id, e) => {
+  try {
+    await api.processing.deleteDataPatent(id);
+    getData();
+  } catch (e) {}
+};
+const handleConfirmTwo = async (id, e) => {
+  try {
+    await api.processing.deleteTeamMember(id);
+    getDataTwo();
+  } catch (e) {}
 };
 </script>
 

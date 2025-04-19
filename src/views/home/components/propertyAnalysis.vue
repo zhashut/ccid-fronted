@@ -108,7 +108,6 @@ import G2Chart from "@/components/G2Chart.vue";
 const selectValue = ref("jack");
 const handleChange = () => {
   // 选择器变更逻辑
-  console.log("选择器值变更:", selectValue.value);
 };
 const timeValue = ref();
 
