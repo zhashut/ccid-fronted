@@ -61,7 +61,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch } from "vue";
+import { ref, onMounted } from "vue";
 import G2Chart from "@/components/G2Chart.vue";
 // import { getDataPatentList } from "@/api";
 import api from "@/api";
@@ -115,14 +115,6 @@ const handleChange = async () => {
   });
 };
 
-const handleTableChange = (pag) => {
-  pagination.value = {
-    ...pagination.value,
-    page: pag.current,
-    pageSize: pag.pageSize,
-  };
-};
-
 // 分页配置
 const pagination = ref({
   page: 1, // 当前页码
@@ -130,11 +122,17 @@ const pagination = ref({
   total: 0,
 });
 
-watch(pagination, async () => {
-  await fetchGetDataPatentList({
+const handleTableChange = async (pag) => {
+  pagination.value = {
     ...pagination.value,
+    page: pag.current,
+    pageSize: pag.pageSize,
+  };
+  await fetchGetDataPatentList({
+    page: pagination.value.page,
+    pageSize: pagination.value.pageSize,
   });
-});
+};
 
 const data = ref([]);
 const isOptionsInitialized = ref(false);
