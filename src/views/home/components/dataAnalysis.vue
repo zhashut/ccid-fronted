@@ -12,13 +12,15 @@
         ref="select"
         v-model:value="selectValue"
         style="width: 120px"
-        @focus="focus"
         @change="handleChange"
       >
-        <a-select-option value="jack">Jack</a-select-option>
-        <a-select-option value="lucy">Lucy</a-select-option>
-        <a-select-option value="disabled" disabled>Disabled</a-select-option>
-        <a-select-option value="Yiminghe">yiminghe</a-select-option>
+        <a-select-option
+          v-for="option in fieldOptions"
+          :key="option.value"
+          :value="option.value"
+        >
+          {{ option.label }}
+        </a-select-option>
       </a-select>
     </div>
 
@@ -40,6 +42,7 @@
           :columns="columns"
           :data-source="data"
           :pagination="pagination"
+          @change="handleTableChange"
         >
           <template #bodyCell="{ column, record }">
             <!-- 自定义名称列 -->
@@ -57,22 +60,107 @@
   </div>
 </template>
 
-<script setup>
-import { ref } from "vue";
+<script setup lang="ts">
+import { ref, onMounted, watch } from "vue";
 import G2Chart from "@/components/G2Chart.vue";
+import { getDataPatentList } from "@/api";
 
-// 搜索功能 (保持原样)
+onMounted(async () => {
+  await fetchGetDataPatentList();
+});
+
+const columns = [
+  {
+    title: "专利号",
+    dataIndex: "id",
+    key: "id",
+  },
+  {
+    title: "标题",
+    dataIndex: "title",
+    key: "title",
+  },
+
+  {
+    title: "申请人",
+    dataIndex: "applicant",
+    key: "applicant",
+  },
+  {
+    title: "申请日期",
+    dataIndex: "date",
+    key: "date",
+  },
+  {
+    title: "技术领域",
+    dataIndex: "field",
+    key: "field",
+  },
+];
+
+// 搜索功能
 const searchValue = ref("");
-const onSearch = () => {
-  // 搜索逻辑
+const onSearch = async () => {
+  await fetchGetDataPatentList({
+    keyword: searchValue.value,
+  });
 };
 
-// 选择器功能 (保持原样)
-const selectValue = ref("jack");
-const handleChange = () => {
-  // 选择器变更逻辑
-  console.log("选择器值变更:", selectValue.value);
+// 选择器功能
+const selectValue = ref("全部");
+const handleChange = async () => {
+  await fetchGetDataPatentList({
+    field: selectValue.value === "全部" ? "" : selectValue.value,
+  });
 };
+
+const handleTableChange = (pag) => {
+  pagination.value = {
+    ...pagination.value,
+    page: pag.current,
+    pageSize: pag.pageSize,
+  };
+};
+
+// 分页配置
+const pagination = ref({
+  page: 1, // 当前页码
+  pageSize: 10, // 每页显示条数
+  total: 0,
+});
+
+watch(pagination, async () => {
+  await fetchGetDataPatentList({
+    ...pagination.value,
+  });
+});
+
+const data = ref([]);
+const isOptionsInitialized = ref(false);
+const allFieldOptions = ref<Array<{ value: string; label: string }>>([]);
+const fieldOptions = ref([{ value: "全部", label: "全部" }]);
+
+async function fetchGetDataPatentList(params?: any) {
+  const res: any = await getDataPatentList(params);
+  if (res.code === 0) {
+    data.value = res.data.list;
+    pagination.value.total = res.data.total;
+    if (!isOptionsInitialized.value) {
+      const fields = res.data.list
+        .map((item) => item.field)
+        .filter((field, index, self) => self.indexOf(field) === index);
+      allFieldOptions.value = [
+        { value: "全部", label: "全部" },
+        ...fields.map((field) => ({
+          value: field,
+          label: field,
+        })),
+      ];
+      isOptionsInitialized.value = true;
+    }
+    fieldOptions.value = allFieldOptions.value;
+  }
+}
 
 // 图表数据配置
 const lineChartData = ref([
@@ -230,7 +318,6 @@ const barChartOptions = ref({
         style: {
           fontSize: 10,
           fill: "#666",
-
         },
       },
     },
@@ -259,77 +346,6 @@ const barChartOptions = ref({
     },
   },
 });
-
-// table
-// 分页配置
-const pagination = ref({
-  current: 1, // 当前页码
-  pageSize: 10, // 每页显示条数
-  onChange: (page, pageSize) => {
-    // 页码改变回调
-    pagination.value.current = page;
-    pagination.value.pageSize = pageSize;
-  },
-});
-const columns = [
-  {
-    title: "专科号",
-    dataIndex: "id",
-    key: "id",
-  },
-  {
-    title: "标题",
-    dataIndex: "title",
-    key: "title",
-  },
-
-  {
-    title: "申请人",
-    dataIndex: "applicant",
-    key: "applicant",
-  },
-  {
-    title: "申请日期",
-    dataIndex: "date",
-    key: "date",
-  },
-  {
-    title: "技术领域",
-    dataIndex: "field",
-    key: "field",
-  },
-];
-// 模拟数据生成
-const data = ref([
-  {
-    id: "CN202410000000.1",
-    title: "一种基于深度学习的图像识别方法",
-    applicant: "某科技公司",
-    date: "2024-01-01",
-    field: "计算机视觉",
-  },
-  {
-    id: "CN202410000001.2",
-    title: "自然语言处理中的文本分类方法",
-    applicant: "某人工智能研究所",
-    date: "2024-01-05",
-    field: "自然语言处理",
-  },
-  {
-    id: "CN202410000002.3",
-    title: "基于深度强化学习的决策系统",
-    applicant: "某大学",
-    date: "2024-01-10",
-    field: "机器学习",
-  },
-  {
-    id: "CN202410000003.4",
-    title: "一种音视频特征提取方法",
-    applicant: "某声学研究所",
-    date: "2024-01-15",
-    field: "语音识别",
-  },
-]);
 </script>
 
 <style lang="scss" scoped>
