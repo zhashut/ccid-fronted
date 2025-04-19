@@ -135,11 +135,11 @@
         </a-select>
       </a-form-item>
       <a-form-item label="报告内容" name="content">
-        <a-input v-model:value="formState.content" />
+        <a-textarea v-model:value="formState.content" />
       </a-form-item>
     </a-form>
 
-    <template #footer v-if="modalValue === '报告修改'">
+    <template #footer v-if="modalValue === '编辑'">
       <a-button @click="handleCancel">取消</a-button>
       <a-button type="primary" @click="handleSubmit">确定</a-button>
     </template>
@@ -432,7 +432,7 @@ const formState = reactive({
 });
 const handleColumns = (row) => {
   modalVisible.value = true;
-  modalValue.value = "报告修改";
+  modalValue.value = "编辑";
   Object.keys(formState).forEach((key) => {
     if (row.hasOwnProperty(key)) {
       formState[key] = row[key];
