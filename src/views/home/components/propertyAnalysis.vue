@@ -413,12 +413,9 @@ const getData = async () => {
       pageSize: pagination.value.pageSize,
     };
     const res = await api.propertyAnalysis.getDataReportList(params);
-    console.log(res);
     data.value = res.data.list;
     timeValue.value = "";
-  } catch (e) {
-    console.log(e);
-  }
+  } catch (e) {}
 };
 // 弹窗
 const modalVisible = ref(false);
@@ -434,7 +431,6 @@ const formState = reactive({
   status: 1,
 });
 const handleColumns = (row) => {
-  console.log("zhashut 编辑 row", row);
   modalVisible.value = true;
   modalValue.value = "报告修改";
   Object.keys(formState).forEach((key) => {
@@ -462,51 +458,14 @@ const handleCancel = () => {
   modalVisible.value = false;
 };
 
-// 弹窗二
-const modalTowVisible = ref(false);
-const columnsTwo = [
-  {
-    title: "报告",
-    dataIndex: "id",
-    key: "id",
-  },
-  {
-    title: "报告名称",
-    dataIndex: "name",
-    key: "name",
-  },
-  {
-    title: "生成时间",
-    dataIndex: "time",
-    key: "time",
-  },
-  {
-    title: "报告内容",
-    dataIndex: "content",
-    key: "content",
-  },
-  {
-    title: "报告类型",
-    dataIndex: "type",
-    key: "type",
-  },
-  {
-    title: "状态",
-    dataIndex: "status",
-    key: "status",
-  },
-  {
-    title: "操作",
-    dataIndex: "operation",
-    key: "operation",
-  },
-];
-const dataTwo = ref();
 const setDataTwo = (row) => {
-  console.log("zhashut 查看 row", row);
   modalValue.value = "查看";
-  dataTwo.value = [...[row]]; // 强制转为数组
   modalVisible.value = true;
+  Object.keys(formState).forEach((key) => {
+    if (row.hasOwnProperty(key)) {
+      formState[key] = row[key];
+    }
+  });
 };
 </script>
 
