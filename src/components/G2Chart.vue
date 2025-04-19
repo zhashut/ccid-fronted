@@ -62,7 +62,7 @@ const renderChart = () => {
       });
     }
   }
-
+  chart.axis("value", false);
   chart.options(mergedOptions);
   chart.render();
 };

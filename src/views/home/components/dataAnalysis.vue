@@ -31,9 +31,27 @@
             :options="lineChartOptions"
           />
         </div>
-        <div class="sidebar">
+        <div class="chart-wrapper">
           <G2Chart type="bar" :data="barChartData" :options="barChartOptions" />
         </div>
+      </div>
+      <div class="table">
+        <a-table
+          :columns="columns"
+          :data-source="data"
+          :pagination="pagination"
+        >
+          <template #bodyCell="{ column, record }">
+            <!-- 自定义名称列 -->
+            <template v-if="column.key != 'field'">
+              {{ record[column.dataIndex] }}
+            </template>
+
+            <template v-if="column.key === 'field'">
+              <a-tag color="blue">{{ record.field }}</a-tag>
+            </template>
+          </template>
+        </a-table>
       </div>
     </div>
   </div>
@@ -41,7 +59,7 @@
 
 <script setup>
 import { ref } from "vue";
-import G2Chart from "../../../components/G2Chart.vue";
+import G2Chart from "@/components/G2Chart.vue";
 
 // 搜索功能 (保持原样)
 const searchValue = ref("");
@@ -58,34 +76,95 @@ const handleChange = () => {
 
 // 图表数据配置
 const lineChartData = ref([
-  { year: "1991", value: 3 },
-  { year: "1992", value: 4 },
-  { year: "1993", value: 3.5 },
-  { year: "1994", value: 5 },
-  { year: "1995", value: 4.9 },
-  { year: "1996", value: 6 },
-  { year: "1997", value: 7 },
-  { year: "1998", value: 9 },
-  { year: "1999", value: 13 },
+  { year: "1月", value: 10 },
+  { year: "2月", value: 15 },
+  { year: "3月", value: 20 },
+  { year: "4月", value: 25 },
 ]);
 
 // 静态图表配置
 const lineChartOptions = ref({
   type: "view",
+  height: 350,
   autoFit: true,
-  encode: { x: "year", y: "value" },
+  padding: [40, 20, 50, 50], // 调整边距（上、右、下、左）
+  encode: {
+    x: "year",
+    y: "value",
+  },
+  scale: {
+    y: {
+      min: 0,
+      max: 25,
+      tickCount: 5, // 0,5,10,15,20,25
+      nice: true,
+    },
+    x: {
+      range: [0.1, 0.9], // 控制x轴显示范围
+    },
+  },
   children: [
     {
       type: "line",
-      labels: [{ text: "value", style: { dx: -10, dy: -12 } }],
-      style: { stroke: "#1890ff", lineWidth: 2 },
+      style: {
+        stroke: "#1890ff",
+        lineWidth: 3, // 加粗线条
+        lineJoin: "round", // 圆角连接
+      },
+      label: {
+        text: "value",
+        position: "top",
+        style: {
+          fill: "#1890ff",
+          fontSize: 12,
+          fontWeight: "bold",
+          dy: -10, // 标签上移
+        },
+      },
     },
     {
       type: "point",
-      style: { fill: "white" },
-      tooltip: false,
+      shape: "circle",
+      size: 4,
+      style: {
+        fill: "#fff",
+        stroke: "#1890ff",
+        lineWidth: 2,
+      },
     },
   ],
+  axis: {
+    x: {
+      title: false,
+      label: {
+        style: {
+          fontSize: 12,
+          fill: "#666",
+        },
+      },
+      grid: null, // 隐藏x轴网格线
+    },
+    y: {
+      title: false,
+      tickCount: 6, // 强制6个刻度
+      label: {
+        formatter: (v) => `${v}`,
+        style: {
+          fontSize: 12,
+          fill: "#666",
+        },
+      },
+      grid: {
+        line: {
+          style: {
+            stroke: "#eee",
+            lineWidth: 1,
+            lineDash: [4, 2], // 虚线网格
+          },
+        },
+      },
+    },
+  },
 });
 
 const barChartData = ref([
@@ -98,6 +177,7 @@ const barChartData = ref([
 
 const barChartOptions = ref({
   type: "view",
+  height: 350,
   title: {
     text: "技术领域分布",
     style: {
@@ -107,7 +187,7 @@ const barChartOptions = ref({
     },
   },
   coordinate: { transform: [{ type: "transpose" }] }, // 关键：实现水平方向
-  encode: { y: "category", x: "value" }, // 交换x/y编码
+  encode: { x: "category", y: "value" }, // 交换x/y编码
   scale: {
     x: {
       // 原y轴配置
@@ -123,12 +203,13 @@ const barChartOptions = ref({
       style: {
         fill: ({ category }) =>
           ({
-            机器学习: "#1f77b4",
-            计算机视觉: "#17becf",
-            自然语言处理: "#2ca02c",
-            语音识别: "#ff7f0e",
-            其他: "#9467bd",
+            机器学习: "#6395FA",
+            计算机视觉: "#63DAAB",
+            自然语言处理: "#657798",
+            语音识别: "#F7C122",
+            其他: "#7666FA",
           }[category]),
+        marginBottom: 30, // 间隔像素值
       },
       label: {
         text: "value",
@@ -144,17 +225,18 @@ const barChartOptions = ref({
   axis: {
     y: {
       // 原x轴配置
-      title: false,
+      title: null,
       label: {
         style: {
-          fontSize: 12,
+          fontSize: 10,
           fill: "#666",
+
         },
       },
     },
     x: {
       // 原y轴配置
-      title: false,
+      title: null,
       grid: {
         line: {
           style: {
@@ -177,6 +259,77 @@ const barChartOptions = ref({
     },
   },
 });
+
+// table
+// 分页配置
+const pagination = ref({
+  current: 1, // 当前页码
+  pageSize: 10, // 每页显示条数
+  onChange: (page, pageSize) => {
+    // 页码改变回调
+    pagination.value.current = page;
+    pagination.value.pageSize = pageSize;
+  },
+});
+const columns = [
+  {
+    title: "专科号",
+    dataIndex: "id",
+    key: "id",
+  },
+  {
+    title: "标题",
+    dataIndex: "title",
+    key: "title",
+  },
+
+  {
+    title: "申请人",
+    dataIndex: "applicant",
+    key: "applicant",
+  },
+  {
+    title: "申请日期",
+    dataIndex: "date",
+    key: "date",
+  },
+  {
+    title: "技术领域",
+    dataIndex: "field",
+    key: "field",
+  },
+];
+// 模拟数据生成
+const data = ref([
+  {
+    id: "CN202410000000.1",
+    title: "一种基于深度学习的图像识别方法",
+    applicant: "某科技公司",
+    date: "2024-01-01",
+    field: "计算机视觉",
+  },
+  {
+    id: "CN202410000001.2",
+    title: "自然语言处理中的文本分类方法",
+    applicant: "某人工智能研究所",
+    date: "2024-01-05",
+    field: "自然语言处理",
+  },
+  {
+    id: "CN202410000002.3",
+    title: "基于深度强化学习的决策系统",
+    applicant: "某大学",
+    date: "2024-01-10",
+    field: "机器学习",
+  },
+  {
+    id: "CN202410000003.4",
+    title: "一种音视频特征提取方法",
+    applicant: "某声学研究所",
+    date: "2024-01-15",
+    field: "语音识别",
+  },
+]);
 </script>
 
 <style lang="scss" scoped>
@@ -197,6 +350,7 @@ const barChartOptions = ref({
       .chart-wrapper {
         flex: 1;
         height: 400px;
+        margin-bottom: 20px;
 
         /* 图表容器样式 */
         :deep(.g2-chart-container) {

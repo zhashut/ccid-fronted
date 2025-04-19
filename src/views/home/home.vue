@@ -98,7 +98,4 @@ const handleTabChange = (key: string) => {
   border-bottom-color: #1890ff;
   font-weight: 500;
 }
-
-.content-container {
-}
 </style>
